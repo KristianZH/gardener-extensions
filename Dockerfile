@@ -1,12 +1,17 @@
+#############      builder-base                             #############
+FROM golang:1.11.5 AS builder-base
+
+COPY ./hack/install-requirements.sh /install-requirements.sh
+
+RUN /install-requirements.sh
+
 #############      builder                                  #############
-FROM golang:1.11.5 AS builder
+FROM builder-base AS builder
 
 ARG VERIFY=true
 
 WORKDIR /go/src/github.com/gardener/gardener-extensions
 COPY . .
-
-RUN ./hack/install-requirements.sh
 
 RUN make VERIFY=$VERIFY all
 

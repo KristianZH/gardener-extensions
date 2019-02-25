@@ -24,11 +24,11 @@ VERIFY           := true
 
 .PHONY: format
 format:
-	@go fmt ./pkg/... ./controllers/...
+	@./hack/format.sh
 
 .PHONY: generate
 generate:
-	@go generate ./pkg/... ./controllers/...
+	@./hack/generate.sh
 
 .PHONY: check
 check:
@@ -36,23 +36,21 @@ check:
 
 .PHONY: test
 test:
-	@ginkgo -r controllers pkg
+	@./hack/test.sh
 
 .PHONY: verify
-verify: check test
+verify: check generate test format
 
 .PHONY: install
 install:
-	@CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
-		go install -ldflags $(LD_FLAGS) \
-		./controllers/...
+	@./hack/install.sh
 
 
 .PHONY: all
 ifeq ($(VERIFY),true)
-all: generate format verify install
+all: verify install
 else
-all: generate format install
+all: generate install
 endif
 
 ### Docker commands
