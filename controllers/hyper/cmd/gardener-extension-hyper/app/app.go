@@ -12,6 +12,7 @@ import (
 	jeos "github.com/gardener/gardener-extensions/controllers/os-suse-jeos/cmd/gardener-extension-os-suse-jeos/app"
 	ubuntualicloud "github.com/gardener/gardener-extensions/controllers/os-ubuntu-alicloud/cmd/gardener-extension-os-ubuntu-alicloud/app"
 	ubuntu "github.com/gardener/gardener-extensions/controllers/os-ubuntu/cmd/gardener-extension-os-ubuntu/app"
+	redhat "github.com/gardener/gardener-extensions/controllers/os-redhat/cmd/gardener-extension-os-redhat/app"
 	provideralicloud "github.com/gardener/gardener-extensions/controllers/provider-alicloud/cmd/gardener-extension-provider-alicloud/app"
 	provideraws "github.com/gardener/gardener-extensions/controllers/provider-aws/cmd/gardener-extension-provider-aws/app"
 	providerazure "github.com/gardener/gardener-extensions/controllers/provider-azure/cmd/gardener-extension-provider-azure/app"
@@ -33,6 +34,7 @@ func NewHyperCommand(ctx context.Context) *cobra.Command {
 		jeos.NewControllerCommand(ctx),
 		ubuntu.NewControllerCommand(ctx),
 		ubuntualicloud.NewControllerCommand(ctx),
+		redhat.NewControllerCommand(ctx),
 		provideraws.NewControllerManagerCommand(ctx),
 		providerazure.NewControllerManagerCommand(ctx),
 		providergcp.NewControllerManagerCommand(ctx),

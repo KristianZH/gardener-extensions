@@ -55,9 +55,9 @@ install:
 
 .PHONY: all
 ifeq ($(VERIFY),true)
-all: verify generate install
+all: install
 else
-all: generate install
+all: install
 endif
 
 ### Docker commands
@@ -129,6 +129,14 @@ start-os-ubuntu:
 		-mod=vendor \
 		-ldflags $(LD_FLAGS) \
 		./controllers/os-ubuntu/cmd/gardener-extension-os-ubuntu \
+		--leader-election=$(LEADER_ELECTION)
+
+.PHONY: start-os-redhat
+start-os-redhat:
+	@LEADER_ELECTION_NAMESPACE=extension-os-redhat-pgffs GO111MODULE=on go run \
+		-mod=vendor \
+		-ldflags $(LD_FLAGS) \
+		./controllers/os-redhat/cmd/gardener-extension-os-redhat \
 		--leader-election=$(LEADER_ELECTION)
 
 .PHONY: start-provider-aws
@@ -227,7 +235,7 @@ start-certificate-service:
 
 .PHONY: start-networking-calico
 start-networking-calico:
-	@LEADER_ELECTION_NAMESPACE=garden GO111MODULE=on go run \
+	@LEADER_ELECTION_NAMESPACE=extension-networking-calico-kbxsb GO111MODULE=on go run \
 		-mod=vendor \
 		-ldflags $(LD_FLAGS) \
 		./controllers/networking-calico/cmd/gardener-extension-networking-calico \

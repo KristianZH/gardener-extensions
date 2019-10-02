@@ -1,0 +1,74 @@
+#!/bin/bash
+{{- define "put-content" -}}
+cat << EOF | base64 -d > '{{ .Path }}'
+{{ .Content }}
+EOF
+{{- end -}}
+{{- if .Bootstrap }}
+### Install required packages.
+yum install -y yum-utils device-mapper-persistent-data lvm2 wget socat nfs-utils jq
+### Add Docker repository.
+yum-config-manager \
+  --add-repo \
+  https://download.docker.com/linux/centos/docker-ce.repo
+## Install Docker CE.
+yum install -y docker-ce-18.06.2.ce
+## Create /etc/docker directory.
+mkdir /etc/docker
+# Setup daemon.
+cat > /etc/docker/daemon.json <<EOF
+{
+  "exec-opts": ["native.cgroupdriver=systemd"],
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "100m"
+  },
+  "storage-driver": "overlay2",
+  "storage-opts": [
+    "overlay2.override_kernel_check=true"
+  ]
+}
+EOF
+mkdir -p /etc/systemd/system/docker.service.d
+#install needed packages
+{{- end }}
+{{ range $_, $file := .Files -}}
+mkdir -p '{{ $file.Dirname }}'
+{{ template "put-content" $file }}
+{{- if $file.Permissions }}
+chmod '{{ $file.Permissions }}' '{{ $file.Path }}'
+{{ end }}
+{{ end }}
+{{- if not .Bootstrap -}}
+#install needed modules
+modprobe ip_tables
+#blacklist sctp kernel module
+mkdir -p '/etc/modprobe.d'
+cat << EOF | base64 -d > '/etc/modprobe.d/sctp.conf'
+aW5zdGFsbCBzY3RwIC9iaW4vdHJ1ZQ==
+EOF
+{{ end }}
+{{- range $_, $unit := .Units -}}
+{{ if $unit.Content -}}
+{{ template "put-content" $unit }}
+{{- end }}
+{{ if $unit.DropIns }}
+mkdir -p '{{ $unit.DropIns.Path }}'
+{{ range $_, $dropIn := $unit.DropIns.Items -}}
+{{ template "put-content" $dropIn }}
+{{- end -}}
+{{- end -}}
+{{- end }}
+{{ if not .Bootstrap -}}
+#Changes kubelet's cgroupDriver to be same as Docker CGroupDriver
+sed -i -e "s/^cgroupDriver:.*$/cgroupDriver: $(docker info | grep 'Cgroup Driver:' | cut -d' ' -f3)/" /var/lib/kubelet/config/kubelet
+sed -i -e  "s/^ExecStartPre=\/bin\/sh -c 'hostnamectl set-hostname \$(hostname -f)'.*$//" /etc/systemd/system/kubelet.service
+{{ end -}}
+{{ if .Bootstrap -}}
+sed -i -e "s/^ExecStart=/ExecStart=\/bin\/bash /" /etc/systemd/system/cloud-config-downloader.service
+systemctl daemon-reload
+systemctl enable docker && systemctl restart docker
+{{ range $_, $unit := .Units -}}
+systemctl enable '{{ $unit.Name }}' && systemctl restart '{{ $unit.Name }}'
+{{- end -}}
+{{- end -}}
